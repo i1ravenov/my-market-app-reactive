@@ -28,15 +28,13 @@ public class CartService {
         }
 
         return cartItemRepository.findById(itemId)
-                .<CartItem>flatMap(ci -> {
+                .flatMap(ci -> {
                     if (action == ActionType.PLUS) {
                         ci.setCount(ci.getCount() + 1);
                         return cartItemRepository.save(ci);
                     } else {
                         int newCount = ci.getCount() - 1;
                         if (newCount <= 0) {
-                            // deleteById returns Mono<Void> (empty) so we use then(Mono.just)
-                            // to prevent switchIfEmpty from firing
                             return cartItemRepository.deleteById(itemId).then(Mono.just(ci));
                         } else {
                             ci.setCount(newCount);

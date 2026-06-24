@@ -17,15 +17,43 @@ public class Item {
 
     private Long price;
 
-    public Long getId() { return id; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getImgPath() { return imgPath; }
-    public Long getPrice() { return price; }
+    public Long getId() {
+        return id;
+    }
 
-    public void setId(Long id) { this.id = id; }
-    public void setTitle(String title) { this.title = title; }
-    public void setDescription(String description) { this.description = description; }
-    public void setImgPath(String imgPath) { this.imgPath = imgPath; }
-    public void setPrice(Long price) { this.price = price; }
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getImgPath() {
+        return imgPath;
+    }
+
+    public Long getPrice() {
+        return price;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setImgPath(String imgPath) {
+        this.imgPath = imgPath;
+    }
+
+    public void setPrice(Long price) {
+        this.price = price;
+    }
 }

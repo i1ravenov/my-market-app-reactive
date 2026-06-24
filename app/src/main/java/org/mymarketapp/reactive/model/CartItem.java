@@ -18,7 +18,8 @@ public class CartItem implements Persistable<Long> {
     @Transient
     private boolean newEntity;
 
-    public CartItem() {}
+    public CartItem() {
+    }
 
     public CartItem(Long itemId, Integer count) {
         this.itemId = itemId;
@@ -27,14 +28,28 @@ public class CartItem implements Persistable<Long> {
     }
 
     @Override
-    public Long getId() { return itemId; }
+    public Long getId() {
+        return itemId;
+    }
 
     @Override
-    public boolean isNew() { return newEntity; }
+    public boolean isNew() {
+        return newEntity;
+    }
 
-    public Long getItemId() { return itemId; }
-    public Integer getCount() { return count; }
+    public Long getItemId() {
+        return itemId;
+    }
 
-    public void setItemId(Long itemId) { this.itemId = itemId; }
-    public void setCount(Integer count) { this.count = count; }
+    public Integer getCount() {
+        return count;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
+    }
 }
