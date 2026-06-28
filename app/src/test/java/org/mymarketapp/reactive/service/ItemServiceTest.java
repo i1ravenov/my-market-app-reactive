@@ -40,7 +40,7 @@ class ItemServiceTest {
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 3))
                 .assertNext(items -> {
                     assertThat(items).hasSize(3);
-                    assertThat(items.get(0).title()).isEqualTo("Alpha");
+                    assertThat(items.getFirst().title()).isEqualTo("Alpha");
                 })
                 .verifyComplete();
     }
@@ -68,7 +68,7 @@ class ItemServiceTest {
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 2, 2))
                 .assertNext(items -> {
                     assertThat(items).hasSize(1);
-                    assertThat(items.get(0).title()).isEqualTo("Gamma");
+                    assertThat(items.getFirst().title()).isEqualTo("Gamma");
                 })
                 .verifyComplete();
     }
@@ -79,7 +79,7 @@ class ItemServiceTest {
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("мяч", SortType.NO, 1, 5))
-                .assertNext(items -> assertThat(items.get(0).title()).isEqualTo("Мяч"))
+                .assertNext(items -> assertThat(items.getFirst().title()).isEqualTo("Мяч"))
                 .verifyComplete();
     }
 
@@ -118,7 +118,7 @@ class ItemServiceTest {
         when(cartItemRepository.findAll()).thenReturn(Flux.just(ci));
 
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 5))
-                .assertNext(items -> assertThat(items.get(0).count()).isEqualTo(3))
+                .assertNext(items -> assertThat(items.getFirst().count()).isEqualTo(3))
                 .verifyComplete();
     }
 

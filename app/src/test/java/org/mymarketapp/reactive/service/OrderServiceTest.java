@@ -96,11 +96,11 @@ class OrderServiceTest {
                     assertThat(dto.id()).isEqualTo(1L);
                     assertThat(dto.totalSum()).isEqualTo(1000L);
                     assertThat(dto.items()).hasSize(1);
-                    assertThat(dto.items().get(0).title()).isEqualTo("Мяч");
+                    assertThat(dto.items().getFirst().title()).isEqualTo("Мяч");
                 })
                 .assertNext(dto -> {
                     assertThat(dto.id()).isEqualTo(2L);
-                    assertThat(dto.items().get(0).title()).isEqualTo("Скакалка");
+                    assertThat(dto.items().getFirst().title()).isEqualTo("Скакалка");
                 })
                 .verifyComplete();
     }
