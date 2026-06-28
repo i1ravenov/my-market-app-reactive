@@ -24,10 +24,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-    @Mock OrderRepository orderRepository;
-    @Mock OrderItemRepository orderItemRepository;
-    @Mock CartService cartService;
-    @InjectMocks OrderService orderService;
+    @Mock
+    OrderRepository orderRepository;
+    @Mock
+    OrderItemRepository orderItemRepository;
+    @Mock
+    CartService cartService;
+    @InjectMocks
+    OrderService orderService;
 
     // ── checkout ──────────────────────────────────────────────────────────────
 

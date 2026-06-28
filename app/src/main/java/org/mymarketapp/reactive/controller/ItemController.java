@@ -4,6 +4,7 @@ import org.mymarketapp.reactive.dto.ActionType;
 import org.mymarketapp.reactive.dto.SortType;
 import org.mymarketapp.reactive.service.CartService;
 import org.mymarketapp.reactive.service.ItemService;
+import org.mymarketapp.reactive.util.GridUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,8 @@ public class ItemController {
 
     private final ItemService itemService;
     private final CartService cartService;
+
+    private static final int DEFAULT_COLS_N = 3;
 
     public ItemController(ItemService itemService, CartService cartService) {
         this.itemService = itemService;
@@ -38,7 +41,7 @@ public class ItemController {
                 itemService.getItemsPage(search, sort, pageNumber, pageSize),
                 itemService.buildPageDto(search, sort, pageNumber, pageSize)
         ).map(t -> {
-            model.addAttribute("items", t.getT1());
+            model.addAttribute("items", GridUtils.splitIntoRows(t.getT1(), DEFAULT_COLS_N));
             model.addAttribute("search", search);
             model.addAttribute("sort", sort.name());
             model.addAttribute("paging", t.getT2());

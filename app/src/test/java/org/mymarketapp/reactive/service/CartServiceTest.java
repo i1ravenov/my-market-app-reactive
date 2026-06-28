@@ -6,7 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mymarketapp.reactive.dto.ActionType;
-import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.model.Item;
 import org.mymarketapp.reactive.repository.CartItemRepository;
@@ -16,17 +15,18 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
 
-    @Mock CartItemRepository cartItemRepository;
-    @Mock ItemRepository itemRepository;
-    @InjectMocks CartService cartService;
+    @Mock
+    CartItemRepository cartItemRepository;
+    @Mock
+    ItemRepository itemRepository;
+    @InjectMocks
+    CartService cartService;
 
     // ── changeCount ───────────────────────────────────────────────────────────
 

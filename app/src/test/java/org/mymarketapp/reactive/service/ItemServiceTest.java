@@ -22,104 +22,102 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ItemServiceTest {
 
-    @Mock ItemRepository itemRepository;
-    @Mock CartItemRepository cartItemRepository;
-    @InjectMocks ItemService itemService;
+    @Mock
+    ItemRepository itemRepository;
+    @Mock
+    CartItemRepository cartItemRepository;
+    @InjectMocks
+    ItemService itemService;
 
     // ── getItemsPage ──────────────────────────────────────────────────────────
 
     @Test
-    void getItemsPage_noSearch_returnsFirstPageAsRows() {
-        when(itemRepository.findAll()).thenReturn(Flux.fromIterable(threeItems()));
+    void getItemsPage_noSearch_returnsPageItems() {
+        when(itemRepository.findPage(3, 0L)).thenReturn(Flux.fromIterable(threeItems()));
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 3))
-                .assertNext(rows -> {
-                    assertThat(rows).hasSize(1);
-                    assertThat(rows.get(0)).hasSize(3);
-                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Alpha");
+                .assertNext(items -> {
+                    assertThat(items).hasSize(3);
+                    assertThat(items.get(0).title()).isEqualTo("Alpha");
                 })
                 .verifyComplete();
     }
 
     @Test
-    void getItemsPage_pageSizeTwo_splitsTwoItemsIntoOneRow() {
-        when(itemRepository.findAll()).thenReturn(Flux.fromIterable(threeItems()));
+    void getItemsPage_pageSizeTwo_passesCorrectLimitAndOffset() {
+        when(itemRepository.findPage(2, 0L)).thenReturn(Flux.just(
+                item(1L, "Alpha", 100L), item(2L, "Beta", 200L)));
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 2))
-                .assertNext(rows -> {
-                    assertThat(rows).hasSize(1);
-                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Alpha");
-                    assertThat(rows.get(0).get(1).get().title()).isEqualTo("Beta");
+                .assertNext(items -> {
+                    assertThat(items).hasSize(2);
+                    assertThat(items.get(0).title()).isEqualTo("Alpha");
+                    assertThat(items.get(1).title()).isEqualTo("Beta");
                 })
                 .verifyComplete();
     }
 
     @Test
-    void getItemsPage_secondPage_returnsCorrectOffset() {
-        when(itemRepository.findAll()).thenReturn(Flux.fromIterable(threeItems()));
+    void getItemsPage_secondPage_passesCorrectOffset() {
+        when(itemRepository.findPage(2, 2L)).thenReturn(Flux.just(item(3L, "Gamma", 300L)));
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
-        // page 2, size 2 → only "Gamma"
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 2, 2))
-                .assertNext(rows -> {
-                    assertThat(rows).hasSize(1);
-                    assertThat(rows.get(0).get(0)).isPresent();
-                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Gamma");
-                    assertThat(rows.get(0).get(1)).isEmpty();
+                .assertNext(items -> {
+                    assertThat(items).hasSize(1);
+                    assertThat(items.get(0).title()).isEqualTo("Gamma");
                 })
                 .verifyComplete();
     }
 
     @Test
     void getItemsPage_withSearch_callsSearchRepository() {
-        when(itemRepository.findBySearch("мяч")).thenReturn(Flux.just(item(1L, "Мяч", 500L)));
+        when(itemRepository.findPageBySearch("мяч", 5, 0L)).thenReturn(Flux.just(item(1L, "Мяч", 500L)));
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("мяч", SortType.NO, 1, 5))
-                .assertNext(rows -> assertThat(rows.get(0).get(0).get().title()).isEqualTo("Мяч"))
+                .assertNext(items -> assertThat(items.get(0).title()).isEqualTo("Мяч"))
                 .verifyComplete();
     }
 
     @Test
-    void getItemsPage_sortAlpha_sortsByTitle() {
-        when(itemRepository.findAll()).thenReturn(Flux.just(
-                item(1L, "Zebra", 100L),
-                item(2L, "Apple", 200L)));
+    void getItemsPage_sortAlpha_callsOrderByTitleRepository() {
+        when(itemRepository.findPageOrderByTitle(5, 0L)).thenReturn(Flux.just(
+                item(2L, "Apple", 200L), item(1L, "Zebra", 100L)));
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("", SortType.ALPHA, 1, 5))
-                .assertNext(rows -> {
-                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Apple");
-                    assertThat(rows.get(0).get(1).get().title()).isEqualTo("Zebra");
+                .assertNext(items -> {
+                    assertThat(items.get(0).title()).isEqualTo("Apple");
+                    assertThat(items.get(1).title()).isEqualTo("Zebra");
                 })
                 .verifyComplete();
     }
 
     @Test
-    void getItemsPage_sortPrice_sortsByPrice() {
-        when(itemRepository.findAll()).thenReturn(Flux.just(
-                item(1L, "Expensive", 5000L),
-                item(2L, "Cheap", 100L)));
+    void getItemsPage_sortPrice_callsOrderByPriceRepository() {
+        when(itemRepository.findPageOrderByPrice(5, 0L)).thenReturn(Flux.just(
+                item(2L, "Cheap", 100L), item(1L, "Expensive", 5000L)));
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("", SortType.PRICE, 1, 5))
-                .assertNext(rows -> {
-                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Cheap");
-                    assertThat(rows.get(0).get(1).get().title()).isEqualTo("Expensive");
+                .assertNext(items -> {
+                    assertThat(items.get(0).title()).isEqualTo("Cheap");
+                    assertThat(items.get(1).title()).isEqualTo("Expensive");
                 })
                 .verifyComplete();
     }
 
     @Test
     void getItemsPage_includesCartCounts() {
-        when(itemRepository.findAll()).thenReturn(Flux.just(item(7L, "Мяч", 500L)));
+        when(itemRepository.findPage(5, 0L)).thenReturn(Flux.just(item(7L, "Мяч", 500L)));
         CartItem ci = new CartItem(7L, 3);
         when(cartItemRepository.findAll()).thenReturn(Flux.just(ci));
 
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 5))
-                .assertNext(rows -> assertThat(rows.get(0).get(0).get().count()).isEqualTo(3))
+                .assertNext(items -> assertThat(items.get(0).count()).isEqualTo(3))
                 .verifyComplete();
     }
 
