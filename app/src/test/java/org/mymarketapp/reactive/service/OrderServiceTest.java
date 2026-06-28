@@ -6,6 +6,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mymarketapp.reactive.dto.ItemDto;
+import org.mymarketapp.reactive.exception.BasketIsEmptyException;
+import org.mymarketapp.reactive.exception.OrderNotFoundException;
 import org.mymarketapp.reactive.model.Order;
 import org.mymarketapp.reactive.model.OrderItem;
 import org.mymarketapp.reactive.repository.OrderItemRepository;
@@ -70,8 +72,8 @@ class OrderServiceTest {
         when(cartService.getCartItems()).thenReturn(Flux.empty());
 
         StepVerifier.create(orderService.checkout())
-                .expectErrorMatches(ex -> ex instanceof IllegalStateException
-                        && ex.getMessage().contains("пуста"))
+                .expectErrorMatches(ex -> ex instanceof BasketIsEmptyException
+                        && ex.getMessage().contains("empty"))
                 .verify();
 
         verify(orderRepository, never()).save(any());
@@ -134,7 +136,7 @@ class OrderServiceTest {
         when(orderRepository.findById(99L)).thenReturn(Mono.empty());
 
         StepVerifier.create(orderService.getOrder(99L))
-                .expectErrorMatches(ex -> ex instanceof IllegalArgumentException
+                .expectErrorMatches(ex -> ex instanceof OrderNotFoundException
                         && ex.getMessage().contains("99"))
                 .verify();
     }

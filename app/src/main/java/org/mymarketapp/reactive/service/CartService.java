@@ -2,6 +2,7 @@ package org.mymarketapp.reactive.service;
 
 import org.mymarketapp.reactive.dto.ActionType;
 import org.mymarketapp.reactive.dto.ItemDto;
+import org.mymarketapp.reactive.exception.ItemNotFoundException;
 import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.ItemRepository;
@@ -56,7 +57,7 @@ public class CartService {
         return cartItemRepository.findAll()
                 .filter(ci -> ci.getCount() > 0)
                 .flatMap(ci -> itemRepository.findById(ci.getItemId())
-                        .switchIfEmpty(Mono.error(new IllegalArgumentException("Товар не найден: " + ci.getItemId())))
+                        .switchIfEmpty(Mono.error(new ItemNotFoundException("The product with id = " + ci.getItemId() + " is not found")))
                         .map(item -> new ItemDto(item.getId(), item.getTitle(), item.getDescription(),
                                 item.getImgPath(), item.getPrice(), ci.getCount())));
     }

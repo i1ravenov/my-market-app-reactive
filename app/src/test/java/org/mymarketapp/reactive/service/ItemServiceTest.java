@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mymarketapp.reactive.dto.SortType;
+import org.mymarketapp.reactive.exception.ItemNotFoundException;
 import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.model.Item;
 import org.mymarketapp.reactive.repository.CartItemRepository;
@@ -166,7 +167,7 @@ class ItemServiceTest {
     @Test
     void getItem_found_returnsItemDtoWithCartCount() {
         when(itemRepository.findById(1L)).thenReturn(Mono.just(item(1L, "Мяч", 500L)));
-        when(cartItemRepository.findAll()).thenReturn(Flux.just(new CartItem(1L, 2)));
+        when(cartItemRepository.findById(1L)).thenReturn(Mono.just(new CartItem(1L, 2)));
 
         StepVerifier.create(itemService.getItem(1L))
                 .assertNext(dto -> {
@@ -181,10 +182,10 @@ class ItemServiceTest {
     @Test
     void getItem_notFound_emitsError() {
         when(itemRepository.findById(99L)).thenReturn(Mono.empty());
-        when(cartItemRepository.findAll()).thenReturn(Flux.empty());
+        when(cartItemRepository.findById(99L)).thenReturn(Mono.empty());
 
         StepVerifier.create(itemService.getItem(99L))
-                .expectErrorMatches(ex -> ex instanceof IllegalArgumentException
+                .expectErrorMatches(ex -> ex instanceof ItemNotFoundException
                         && ex.getMessage().contains("99"))
                 .verify();
     }

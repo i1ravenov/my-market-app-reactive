@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 @Controller
@@ -58,12 +59,14 @@ public class ItemController {
             String sort     = form.getFirst("sort") != null ? form.getFirst("sort") : "NO";
             String pageNum  = form.getFirst("pageNumber") != null ? form.getFirst("pageNumber") : "1";
             String pageSize = form.getFirst("pageSize") != null ? form.getFirst("pageSize") : "5";
-
+            String redirect = UriComponentsBuilder.fromPath("/items")
+                    .queryParam("search", search)
+                    .queryParam("sort", sort)
+                    .queryParam("pageNumber", pageNum)
+                    .queryParam("pageSize", pageSize)
+                    .toUriString();
             return cartService.changeCount(id, action)
-                    .thenReturn("redirect:/items?search=" + search
-                            + "&sort=" + sort
-                            + "&pageNumber=" + pageNum
-                            + "&pageSize=" + pageSize);
+                    .thenReturn("redirect:" + redirect);
         });
     }
 

@@ -2,6 +2,8 @@ package org.mymarketapp.reactive.service;
 
 import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.dto.OrderDto;
+import org.mymarketapp.reactive.exception.BasketIsEmptyException;
+import org.mymarketapp.reactive.exception.OrderNotFoundException;
 import org.mymarketapp.reactive.model.Order;
 import org.mymarketapp.reactive.model.OrderItem;
 import org.mymarketapp.reactive.repository.OrderItemRepository;
@@ -34,7 +36,7 @@ public class OrderService {
                 .collectList()
                 .flatMap(items -> {
                     if (items.isEmpty()) {
-                        return Mono.error(new IllegalStateException("Корзина пуста"));
+                        return Mono.error(new BasketIsEmptyException("The basket is empty"));
                     }
                     long total = items.stream()
                             .mapToLong(i -> i.price() * i.count())
@@ -71,7 +73,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Mono<OrderDto> getOrder(long id) {
         return orderRepository.findById(id)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Заказ не найден: " + id)))
+                .switchIfEmpty(Mono.error(new OrderNotFoundException("Order with id = " + id + " is not found")))
                 .flatMap(this::toDto);
     }
 

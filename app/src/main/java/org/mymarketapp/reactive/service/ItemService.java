@@ -3,6 +3,7 @@ package org.mymarketapp.reactive.service;
 import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.dto.PageDto;
 import org.mymarketapp.reactive.dto.SortType;
+import org.mymarketapp.reactive.exception.ItemNotFoundException;
 import org.mymarketapp.reactive.model.Item;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.ItemRepository;
@@ -51,14 +52,18 @@ public class ItemService {
     }
 
     public Mono<ItemDto> getItem(long id) {
-        Mono<Map<Long, Integer>> cartMap = cartItemRepository.findAll()
-                .collectMap(ci -> ci.getItemId(), ci -> ci.getCount());
+        Mono<Item> item = itemRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ItemNotFoundException("The product with id = " + id + " is not found")));
 
-        return Mono.zip(
-                itemRepository.findById(id)
-                        .switchIfEmpty(Mono.error(new IllegalArgumentException("Товар не найден: " + id))),
-                cartMap
-        ).map(t -> toDto(t.getT1(), t.getT2()));
+        Mono<Integer> count = cartItemRepository.findById(id)
+                .map(ci -> ci.getCount())
+                .defaultIfEmpty(0);
+
+        return Mono.zip(item, count)
+                .map(t -> {
+                    Item i = t.getT1();
+                    return new ItemDto(i.getId(), i.getTitle(), i.getDescription(), i.getImgPath(), i.getPrice(), t.getT2());
+                });
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
