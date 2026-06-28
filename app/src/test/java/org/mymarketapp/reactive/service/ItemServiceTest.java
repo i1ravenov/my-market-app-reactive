@@ -39,7 +39,7 @@ class ItemServiceTest {
                 .assertNext(rows -> {
                     assertThat(rows).hasSize(1);
                     assertThat(rows.get(0)).hasSize(3);
-                    assertThat(rows.get(0).get(0).title()).isEqualTo("Alpha");
+                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Alpha");
                 })
                 .verifyComplete();
     }
@@ -52,8 +52,8 @@ class ItemServiceTest {
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 2))
                 .assertNext(rows -> {
                     assertThat(rows).hasSize(1);
-                    assertThat(rows.get(0).get(0).title()).isEqualTo("Alpha");
-                    assertThat(rows.get(0).get(1).title()).isEqualTo("Beta");
+                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Alpha");
+                    assertThat(rows.get(0).get(1).get().title()).isEqualTo("Beta");
                 })
                 .verifyComplete();
     }
@@ -67,9 +67,9 @@ class ItemServiceTest {
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 2, 2))
                 .assertNext(rows -> {
                     assertThat(rows).hasSize(1);
-                    assertThat(rows.get(0).get(0).title()).isEqualTo("Gamma");
-                    // second slot is placeholder
-                    assertThat(rows.get(0).get(1).id()).isEqualTo(-1L);
+                    assertThat(rows.get(0).get(0)).isPresent();
+                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Gamma");
+                    assertThat(rows.get(0).get(1)).isEmpty();
                 })
                 .verifyComplete();
     }
@@ -80,7 +80,7 @@ class ItemServiceTest {
         when(cartItemRepository.findAll()).thenReturn(Flux.empty());
 
         StepVerifier.create(itemService.getItemsPage("мяч", SortType.NO, 1, 5))
-                .assertNext(rows -> assertThat(rows.get(0).get(0).title()).isEqualTo("Мяч"))
+                .assertNext(rows -> assertThat(rows.get(0).get(0).get().title()).isEqualTo("Мяч"))
                 .verifyComplete();
     }
 
@@ -93,8 +93,8 @@ class ItemServiceTest {
 
         StepVerifier.create(itemService.getItemsPage("", SortType.ALPHA, 1, 5))
                 .assertNext(rows -> {
-                    assertThat(rows.get(0).get(0).title()).isEqualTo("Apple");
-                    assertThat(rows.get(0).get(1).title()).isEqualTo("Zebra");
+                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Apple");
+                    assertThat(rows.get(0).get(1).get().title()).isEqualTo("Zebra");
                 })
                 .verifyComplete();
     }
@@ -108,8 +108,8 @@ class ItemServiceTest {
 
         StepVerifier.create(itemService.getItemsPage("", SortType.PRICE, 1, 5))
                 .assertNext(rows -> {
-                    assertThat(rows.get(0).get(0).title()).isEqualTo("Cheap");
-                    assertThat(rows.get(0).get(1).title()).isEqualTo("Expensive");
+                    assertThat(rows.get(0).get(0).get().title()).isEqualTo("Cheap");
+                    assertThat(rows.get(0).get(1).get().title()).isEqualTo("Expensive");
                 })
                 .verifyComplete();
     }
@@ -121,7 +121,7 @@ class ItemServiceTest {
         when(cartItemRepository.findAll()).thenReturn(Flux.just(ci));
 
         StepVerifier.create(itemService.getItemsPage("", SortType.NO, 1, 5))
-                .assertNext(rows -> assertThat(rows.get(0).get(0).count()).isEqualTo(3))
+                .assertNext(rows -> assertThat(rows.get(0).get(0).get().count()).isEqualTo(3))
                 .verifyComplete();
     }
 

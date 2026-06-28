@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,7 +27,7 @@ public class ItemService {
         this.cartItemRepository = cartItemRepository;
     }
 
-    public Mono<List<List<ItemDto>>> getItemsPage(String search, SortType sort, int pageNumber, int pageSize) {
+    public Mono<List<List<Optional<ItemDto>>>> getItemsPage(String search, SortType sort, int pageNumber, int pageSize) {
         Mono<Map<Long, Integer>> cartMap = cartItemRepository.findAll()
                 .collectMap(ci -> ci.getItemId(), ci -> ci.getCount());
 
@@ -92,13 +93,13 @@ public class ItemService {
                 item.getImgPath(), item.getPrice(), count);
     }
 
-    private List<List<ItemDto>> splitIntoRows(List<ItemDto> flat, int cols) {
-        List<List<ItemDto>> rows = new ArrayList<>();
+    private List<List<Optional<ItemDto>>> splitIntoRows(List<ItemDto> flat, int cols) {
+        List<List<Optional<ItemDto>>> rows = new ArrayList<>();
         int i = 0;
         while (i < flat.size()) {
-            List<ItemDto> row = new ArrayList<>();
+            List<Optional<ItemDto>> row = new ArrayList<>();
             for (int c = 0; c < cols; c++) {
-                row.add(i < flat.size() ? flat.get(i++) : ItemDto.placeholder());
+                row.add(i < flat.size() ? Optional.of(flat.get(i++)) : Optional.empty());
             }
             rows.add(row);
         }
