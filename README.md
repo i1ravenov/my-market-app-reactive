@@ -1,6 +1,6 @@
 # my-market-app-reactive
 
-Реактивный аналог интернет-магазина спортивных товаров, реализованный на реактивном стеке Spring.
+Реактивный интернет-магазин спортивных товаров на стеке Spring WebFlux.
 
 ## Стек
 
@@ -21,11 +21,18 @@
 
 ## Запуск
 
+**Локально:**
+
 ```bash
 ./gradlew :app:bootRun
 ```
 
-Приложение поднимается на [http://localhost:8080](http://localhost:8080).  
+**Docker Compose:**
+
+```bash
+docker compose up --build
+```
+Приложение поднимается на [http://localhost:8080](http://localhost:8080).
 База данных создаётся и заполняется автоматически при старте (`schema.sql` + `data.sql`).
 
 ## Тесты
@@ -54,11 +61,17 @@ HTML-отчёт: `app/build/reports/tests/test/index.html`
 ## Структура проекта
 
 ```
-app/src/main/java/org/mymarketapp/reactive/
-├── config/        # Инициализация схемы БД
-├── controller/    # WebFlux-контроллеры (Mono<String>)
-├── dto/           # Record-классы (ItemDto, OrderDto, PageDto, …)
-├── model/         # Сущности R2DBC (@Table, @Id)
-├── repository/    # ReactiveCrudRepository
-└── service/       # Бизнес-логика (Mono/Flux)
+my-market-app-reactive/
+├── app/
+│   ├── Dockerfile
+│   └── src/main/java/org/mymarketapp/reactive/
+│       ├── config/        # Инициализация схемы БД
+│       ├── controller/    # WebFlux-контроллеры (Item, Cart, Order, Image)
+│       ├── dto/           # Record-классы (ItemDto, OrderDto, PageDto, SortType, ActionType)
+│       ├── exception/     # Кастомные исключения (ItemNotFoundException, …)
+│       ├── model/         # Сущности R2DBC (Item, CartItem, Order, OrderItem)
+│       ├── repository/    # ReactiveCrudRepository
+│       ├── service/       # Бизнес-логика (Mono/Flux)
+│       └── util/          # GridUtils (разбивка товаров по строкам)
+└── docker-compose.yaml
 ```
