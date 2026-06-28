@@ -5,8 +5,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mymarketapp.reactive.dto.ItemDto;
-import org.mymarketapp.reactive.dto.PageDto;
 import org.mymarketapp.reactive.dto.SortType;
 import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.model.Item;
