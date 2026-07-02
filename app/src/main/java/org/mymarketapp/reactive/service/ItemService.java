@@ -7,6 +7,7 @@ import org.mymarketapp.reactive.exception.ItemNotFoundException;
 import org.mymarketapp.reactive.model.Item;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.ItemRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,6 +27,7 @@ public class ItemService {
         this.cartItemRepository = cartItemRepository;
     }
 
+    @Cacheable(value = "item", key = "#search")
     public Mono<List<ItemDto>> getItemsPage(String search, SortType sort, int pageNumber, int pageSize) {
         Mono<Map<Long, Integer>> cartMap = cartItemRepository.findAll()
                 .collectMap(ci -> ci.getItemId(), ci -> ci.getCount());
@@ -39,6 +41,7 @@ public class ItemService {
                         .collect(Collectors.toList()));
     }
 
+    @Cacheable(value = "page", key = "#search")
     public Mono<PageDto> buildPageDto(String search, SortType sort, int pageNumber, int pageSize) {
         Mono<Long> total = (search == null || search.isBlank())
                 ? itemRepository.count()
@@ -51,6 +54,7 @@ public class ItemService {
         });
     }
 
+    @Cacheable(value = "item", key = "#id")
     public Mono<ItemDto> getItem(long id) {
         Mono<Item> item = itemRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("The product with id = " + id + " is not found")));

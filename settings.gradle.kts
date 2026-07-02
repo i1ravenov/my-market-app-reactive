@@ -13,3 +13,5 @@ plugins {
 
 rootProject.name = "my-market-app-reactive"
 include("app")
+
+include("payment-service")

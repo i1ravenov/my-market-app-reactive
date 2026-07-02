@@ -1,5 +1,7 @@
 package org.mymarketapp.reactive.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
@@ -11,8 +13,12 @@ public class CartItem implements Persistable<Long> {
 
     @Id
     @Column("item_id")
+    @Getter
+    @Setter
     private Long itemId;
 
+    @Getter
+    @Setter
     private Integer count;
 
     @Transient
@@ -35,21 +41,5 @@ public class CartItem implements Persistable<Long> {
     @Override
     public boolean isNew() {
         return newEntity;
-    }
-
-    public Long getItemId() {
-        return itemId;
-    }
-
-    public Integer getCount() {
-        return count;
-    }
-
-    public void setItemId(Long itemId) {
-        this.itemId = itemId;
-    }
-
-    public void setCount(Integer count) {
-        this.count = count;
     }
 }
