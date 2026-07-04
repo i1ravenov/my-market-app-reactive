@@ -1,10 +1,10 @@
 FROM gradle:8.14-jdk21-alpine AS build
 WORKDIR /workspace
 COPY --chown=gradle:gradle . .
-RUN gradle :app:bootJar --no-daemon -q
+RUN gradle :payment-service:bootJar --no-daemon -q
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /workspace/payment-service/build/libs/payment-service-*.jar ./
 EXPOSE 8081
-ENTRYPOINT ["sh", "-c", "java -jar /payment-service/payment-service-*.jar"]
+ENTRYPOINT ["sh", "-c", "java -jar /app/payment-service-*.jar"]
