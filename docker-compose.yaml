@@ -1,5 +1,13 @@
 services:
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   payment-service:
     build:
       context: .
@@ -9,9 +17,14 @@ services:
 
   app:
     depends_on:
-      - payment-service
+      payment-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
     build:
       context: .
       dockerfile: app/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      - SPRING_DATA_REDIS_URL=redis://redis:6379
