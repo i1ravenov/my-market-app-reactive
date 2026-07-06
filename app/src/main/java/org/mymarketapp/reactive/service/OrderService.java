@@ -4,8 +4,11 @@ import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.dto.OrderDto;
 import org.mymarketapp.reactive.exception.BasketIsEmptyException;
 import org.mymarketapp.reactive.exception.OrderNotFoundException;
+import org.mymarketapp.reactive.exception.PaymentFailedException;
+import org.mymarketapp.reactive.exception.PaymentServiceUnavailableException;
 import org.mymarketapp.reactive.model.Order;
 import org.mymarketapp.reactive.model.OrderItem;
+import org.mymarketapp.reactive.payment.PaymentClient;
 import org.mymarketapp.reactive.repository.OrderItemRepository;
 import org.mymarketapp.reactive.repository.OrderRepository;
 import org.springframework.stereotype.Service;
@@ -21,13 +24,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CartService cartService;
+    private final PaymentClient paymentClient;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
-                        CartService cartService) {
+                        CartService cartService,
+                        PaymentClient paymentClient) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.cartService = cartService;
+        this.paymentClient = paymentClient;
     }
 
     @Transactional
@@ -42,25 +48,38 @@ public class OrderService {
                             .mapToLong(i -> i.price() * i.count())
                             .sum();
 
-                    Order order = new Order();
-                    order.setTotalSum(total);
-
-                    return orderRepository.save(order)
-                            .flatMap(saved -> {
-                                List<OrderItem> orderItems = items.stream()
-                                        .map(dto -> {
-                                            OrderItem oi = new OrderItem();
-                                            oi.setOrderId(saved.getId());
-                                            oi.setItemId(dto.id());
-                                            oi.setTitle(dto.title());
-                                            oi.setPrice(dto.price());
-                                            oi.setCount(dto.count());
-                                            return oi;
-                                        }).toList();
-                                return orderItemRepository.saveAll(orderItems)
-                                        .then(cartService.clearCart())
-                                        .thenReturn(saved.getId());
+                    return paymentClient.pay(total)
+                            .flatMap(payment -> {
+                                if (!payment.available()) {
+                                    return Mono.error(new PaymentServiceUnavailableException("Payment service is unavailable"));
+                                }
+                                if (!payment.success()) {
+                                    return Mono.error(new PaymentFailedException("Insufficient balance to complete the order"));
+                                }
+                                return placeOrder(items, total);
                             });
+                });
+    }
+
+    private Mono<Long> placeOrder(List<ItemDto> items, long total) {
+        Order order = new Order();
+        order.setTotalSum(total);
+
+        return orderRepository.save(order)
+                .flatMap(saved -> {
+                    List<OrderItem> orderItems = items.stream()
+                            .map(dto -> {
+                                OrderItem oi = new OrderItem();
+                                oi.setOrderId(saved.getId());
+                                oi.setItemId(dto.id());
+                                oi.setTitle(dto.title());
+                                oi.setPrice(dto.price());
+                                oi.setCount(dto.count());
+                                return oi;
+                            }).toList();
+                    return orderItemRepository.saveAll(orderItems)
+                            .then(cartService.clearCart())
+                            .thenReturn(saved.getId());
                 });
     }
 

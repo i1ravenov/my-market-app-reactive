@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.model.Order;
 import org.mymarketapp.reactive.model.OrderItem;
+import org.mymarketapp.reactive.payment.BalanceResult;
+import org.mymarketapp.reactive.payment.PaymentClient;
+import org.mymarketapp.reactive.payment.PaymentResult;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.OrderItemRepository;
 import org.mymarketapp.reactive.repository.OrderRepository;
@@ -12,11 +15,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -27,6 +34,7 @@ class OrderControllerIntegrationTest {
     @Autowired OrderRepository orderRepository;
     @Autowired OrderItemRepository orderItemRepository;
     @Autowired CartItemRepository cartItemRepository;
+    @MockitoBean PaymentClient paymentClient;
 
     @BeforeEach
     void cleanState() {
@@ -34,6 +42,9 @@ class OrderControllerIntegrationTest {
                 .then(orderRepository.deleteAll())
                 .then(cartItemRepository.deleteAll())
                 .block();
+
+        when(paymentClient.getBalance()).thenReturn(Mono.just(new BalanceResult(true, 1_000_000L)));
+        when(paymentClient.pay(anyLong())).thenReturn(Mono.just(new PaymentResult(true, true, 1_000_000L)));
     }
 
     @Test

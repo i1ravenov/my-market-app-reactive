@@ -6,8 +6,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mymarketapp.reactive.dto.ActionType;
+import org.mymarketapp.reactive.dto.CheckoutStatus;
 import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.model.Item;
+import org.mymarketapp.reactive.payment.BalanceResult;
+import org.mymarketapp.reactive.payment.PaymentClient;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.ItemRepository;
 import reactor.core.publisher.Flux;
@@ -25,6 +28,8 @@ class CartServiceTest {
     CartItemRepository cartItemRepository;
     @Mock
     ItemRepository itemRepository;
+    @Mock
+    PaymentClient paymentClient;
     @InjectMocks
     CartService cartService;
 
@@ -170,6 +175,41 @@ class CartServiceTest {
                 .verifyComplete();
 
         verify(cartItemRepository).deleteAll();
+    }
+
+    // ── canCheckout ───────────────────────────────────────────────────────────
+
+    @Test
+    void canCheckout_sufficientBalance_returnsOk() {
+        when(cartItemRepository.findAll()).thenReturn(Flux.just(cartItemWithCount(1L, 2)));
+        when(itemRepository.findById(1L)).thenReturn(Mono.just(itemWith(1L, "A", 100L)));
+        when(paymentClient.getBalance()).thenReturn(Mono.just(new BalanceResult(true, 1000L)));
+
+        StepVerifier.create(cartService.canCheckout())
+                .expectNext(CheckoutStatus.OK)
+                .verifyComplete();
+    }
+
+    @Test
+    void canCheckout_insufficientBalance_returnsInsufficientBalance() {
+        when(cartItemRepository.findAll()).thenReturn(Flux.just(cartItemWithCount(1L, 2)));
+        when(itemRepository.findById(1L)).thenReturn(Mono.just(itemWith(1L, "A", 100L)));
+        when(paymentClient.getBalance()).thenReturn(Mono.just(new BalanceResult(true, 100L)));
+
+        StepVerifier.create(cartService.canCheckout())
+                .expectNext(CheckoutStatus.INSUFFICIENT_BALANCE)
+                .verifyComplete();
+    }
+
+    @Test
+    void canCheckout_paymentServiceUnavailable_returnsUnavailable() {
+        when(cartItemRepository.findAll()).thenReturn(Flux.just(cartItemWithCount(1L, 2)));
+        when(itemRepository.findById(1L)).thenReturn(Mono.just(itemWith(1L, "A", 100L)));
+        when(paymentClient.getBalance()).thenReturn(Mono.just(BalanceResult.unavailable()));
+
+        StepVerifier.create(cartService.canCheckout())
+                .expectNext(CheckoutStatus.PAYMENT_SERVICE_UNAVAILABLE)
+                .verifyComplete();
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
