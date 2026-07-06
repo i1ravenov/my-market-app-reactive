@@ -6,6 +6,7 @@ import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.dto.PageDto;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
+@EnableCaching
 public class RedisSerializerConfig {
 
     @Bean
