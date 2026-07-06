@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  description: >
+    Contract between the online store storefront (my-market-app-reactive)
+    and the payment service (payment-service): checking the account balance
+    and charging the order amount at checkout.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+    description: Local payment-service instance
+
+tags:
+  - name: payment
+    description: Account balance operations
+
+paths:
+  /balance:
+    get:
+      operationId: getBalance
+      tags: [ payment ]
+      summary: Get the current account balance
+      responses:
+        '200':
+          description: Current balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+
+  /pay:
+    post:
+      operationId: pay
+      tags: [ payment ]
+      summary: Charge the order amount against the account balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '200':
+          description: >
+            Result of the payment attempt. If the balance is insufficient, the
+            response is still returned with status code 200 and success = false —
+            this is a normal business outcome, not a service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+components:
+  schemas:
+    BalanceResponse:
+      type: object
+      required: [ balance ]
+      properties:
+        balance:
+          type: integer
+          format: int64
+          description: Current account balance
+          example: 5000
+
+    PaymentRequest:
+      type: object
+      required: [ amount ]
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Order amount to charge
+          example: 1500
+
+    PaymentResponse:
+      type: object
+      required: [ success, balance ]
+      properties:
+        success:
+          type: boolean
+          description: true — the charge succeeded; false — insufficient balance
+        balance:
+          type: integer
+          format: int64
+          description: Account balance after the payment attempt (unchanged if success = false)
+          example: 3500
