@@ -22,40 +22,31 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
-
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-    runtimeOnly("io.r2dbc:r2dbc-h2")
-    runtimeOnly("com.h2database:h2")
-
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.openapitools:jackson-databind-nullable:0.2.6")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
-    testImplementation("org.wiremock:wiremock-standalone:3.13.2")
-    testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testAnnotationProcessor("org.projectlombok:lombok")
 }
 
-val generatedPaymentClientDir = layout.buildDirectory.dir("generated-payment-client").get().asFile
+val generatedDir = layout.buildDirectory.dir("generated").get().asFile
 
 tasks.openApiGenerate {
-    generatorName.set("java")
-    library.set("webclient")
+    generatorName.set("spring")
     inputSpec.set("$rootDir/openapi/payment-api.yaml")
-    outputDir.set(generatedPaymentClientDir.path)
-    apiPackage.set("org.mymarketapp.reactive.paymentclient.api")
-    modelPackage.set("org.mymarketapp.reactive.paymentclient.model")
-    invokerPackage.set("org.mymarketapp.reactive.paymentclient")
+    outputDir.set(generatedDir.path)
+    apiPackage.set("org.mymarketapp.payment.api")
+    modelPackage.set("org.mymarketapp.payment.model")
     configOptions.set(
         mapOf(
-            "useJakartaEe" to "true",
-            "useTags" to "true"
+            "library" to "spring-boot",
+            "reactive" to "true",
+            "interfaceOnly" to "true",
+            "useSpringBoot3" to "true",
+            "useTags" to "true",
+            "documentationProvider" to "none"
         )
     )
 }
@@ -63,7 +54,7 @@ tasks.openApiGenerate {
 sourceSets {
     main {
         java {
-            srcDir(generatedPaymentClientDir.resolve("src/main/java"))
+            srcDir(generatedDir.resolve("src/main/java"))
         }
     }
 }

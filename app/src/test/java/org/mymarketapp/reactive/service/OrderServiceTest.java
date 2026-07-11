@@ -8,8 +8,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.exception.BasketIsEmptyException;
 import org.mymarketapp.reactive.exception.OrderNotFoundException;
+import org.mymarketapp.reactive.exception.PaymentFailedException;
+import org.mymarketapp.reactive.exception.PaymentServiceUnavailableException;
 import org.mymarketapp.reactive.model.Order;
 import org.mymarketapp.reactive.model.OrderItem;
+import org.mymarketapp.reactive.payment.PaymentClient;
+import org.mymarketapp.reactive.payment.PaymentResult;
 import org.mymarketapp.reactive.repository.OrderItemRepository;
 import org.mymarketapp.reactive.repository.OrderRepository;
 import reactor.core.publisher.Flux;
@@ -32,6 +36,8 @@ class OrderServiceTest {
     OrderItemRepository orderItemRepository;
     @Mock
     CartService cartService;
+    @Mock
+    PaymentClient paymentClient;
     @InjectMocks
     OrderService orderService;
 
@@ -44,6 +50,7 @@ class OrderServiceTest {
                 new ItemDto(2L, "Ракетка", null, null, 1500L, 1));
 
         when(cartService.getCartItems()).thenReturn(Flux.fromIterable(cartItems));
+        when(paymentClient.pay(2500L)).thenReturn(Mono.just(new PaymentResult(true, true, 7500L)));
 
         Order saved = new Order();
         saved.setId(10L);
@@ -74,6 +81,32 @@ class OrderServiceTest {
         StepVerifier.create(orderService.checkout())
                 .expectErrorMatches(ex -> ex instanceof BasketIsEmptyException
                         && ex.getMessage().contains("empty"))
+                .verify();
+
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void checkout_insufficientBalance_emitsErrorAndDoesNotSaveOrder() {
+        List<ItemDto> cartItems = List.of(new ItemDto(1L, "Мяч", null, null, 500L, 2));
+        when(cartService.getCartItems()).thenReturn(Flux.fromIterable(cartItems));
+        when(paymentClient.pay(1000L)).thenReturn(Mono.just(new PaymentResult(true, false, 500L)));
+
+        StepVerifier.create(orderService.checkout())
+                .expectErrorMatches(ex -> ex instanceof PaymentFailedException)
+                .verify();
+
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void checkout_paymentServiceUnavailable_emitsErrorAndDoesNotSaveOrder() {
+        List<ItemDto> cartItems = List.of(new ItemDto(1L, "Мяч", null, null, 500L, 2));
+        when(cartService.getCartItems()).thenReturn(Flux.fromIterable(cartItems));
+        when(paymentClient.pay(1000L)).thenReturn(Mono.just(PaymentResult.unavailable()));
+
+        StepVerifier.create(orderService.checkout())
+                .expectErrorMatches(ex -> ex instanceof PaymentServiceUnavailableException)
                 .verify();
 
         verify(orderRepository, never()).save(any());

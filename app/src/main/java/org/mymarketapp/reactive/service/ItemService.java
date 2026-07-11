@@ -4,9 +4,11 @@ import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.dto.PageDto;
 import org.mymarketapp.reactive.dto.SortType;
 import org.mymarketapp.reactive.exception.ItemNotFoundException;
+import org.mymarketapp.reactive.model.CartItem;
 import org.mymarketapp.reactive.model.Item;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.ItemRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,9 +28,10 @@ public class ItemService {
         this.cartItemRepository = cartItemRepository;
     }
 
+    @Cacheable(value = "items", key = "#search + '-' + #sort + '-' + #pageNumber + '-' + #pageSize")
     public Mono<List<ItemDto>> getItemsPage(String search, SortType sort, int pageNumber, int pageSize) {
         Mono<Map<Long, Integer>> cartMap = cartItemRepository.findAll()
-                .collectMap(ci -> ci.getItemId(), ci -> ci.getCount());
+                .collectMap(CartItem::getItemId, CartItem::getCount);
 
         long offset = (long) (pageNumber - 1) * pageSize;
         Mono<List<Item>> items = itemsPage(search, sort, pageSize, offset).collectList();
@@ -39,6 +42,7 @@ public class ItemService {
                         .collect(Collectors.toList()));
     }
 
+    @Cacheable(value = "page", key = "#search + '-' + #sort + '-' + #pageNumber + '-' + #pageSize")
     public Mono<PageDto> buildPageDto(String search, SortType sort, int pageNumber, int pageSize) {
         Mono<Long> total = (search == null || search.isBlank())
                 ? itemRepository.count()
@@ -51,6 +55,7 @@ public class ItemService {
         });
     }
 
+    @Cacheable(value = "item", key = "#id")
     public Mono<ItemDto> getItem(long id) {
         Mono<Item> item = itemRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("The product with id = " + id + " is not found")));

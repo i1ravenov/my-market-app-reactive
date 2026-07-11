@@ -3,6 +3,9 @@ package org.mymarketapp.reactive.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mymarketapp.reactive.model.CartItem;
+import org.mymarketapp.reactive.payment.BalanceResult;
+import org.mymarketapp.reactive.payment.PaymentClient;
+import org.mymarketapp.reactive.payment.PaymentResult;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.OrderItemRepository;
 import org.mymarketapp.reactive.repository.OrderRepository;
@@ -10,9 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -23,6 +30,7 @@ class CartControllerIntegrationTest {
     @Autowired CartItemRepository cartItemRepository;
     @Autowired OrderRepository orderRepository;
     @Autowired OrderItemRepository orderItemRepository;
+    @MockitoBean PaymentClient paymentClient;
 
     @BeforeEach
     void cleanState() {
@@ -30,6 +38,9 @@ class CartControllerIntegrationTest {
                 .then(orderRepository.deleteAll())
                 .then(cartItemRepository.deleteAll())
                 .block();
+
+        when(paymentClient.getBalance()).thenReturn(Mono.just(new BalanceResult(true, 1_000_000L)));
+        when(paymentClient.pay(anyLong())).thenReturn(Mono.just(new PaymentResult(true, true, 1_000_000L)));
     }
 
     @Test
@@ -130,5 +141,49 @@ class CartControllerIntegrationTest {
                 .bodyValue("")
                 .exchange()
                 .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    void getCart_insufficientBalance_showsMessageAndHidesButton() {
+        when(paymentClient.getBalance()).thenReturn(Mono.just(new BalanceResult(true, 1L)));
+        cartItemRepository.save(new CartItem(1L, 2)).block();
+
+        webTestClient.get().uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(body -> {
+                    assertThat(body).contains("Недостаточно средств");
+                    assertThat(body).doesNotContain(">Купить<");
+                });
+    }
+
+    @Test
+    void getCart_paymentServiceUnavailable_showsMessageAndHidesButton() {
+        when(paymentClient.getBalance()).thenReturn(Mono.just(BalanceResult.unavailable()));
+        cartItemRepository.save(new CartItem(1L, 2)).block();
+
+        webTestClient.get().uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(body -> {
+                    assertThat(body).contains("Сервис оплаты недоступен");
+                    assertThat(body).doesNotContain(">Купить<");
+                });
+    }
+
+    @Test
+    void postBuy_insufficientBalance_returnsServerErrorAndDoesNotCreateOrder() {
+        when(paymentClient.pay(anyLong())).thenReturn(Mono.just(new PaymentResult(true, false, 0L)));
+        cartItemRepository.save(new CartItem(1L, 2)).block();
+
+        webTestClient.post().uri("/buy")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .bodyValue("")
+                .exchange()
+                .expectStatus().is5xxServerError();
+
+        assertThat(orderRepository.count().block()).isEqualTo(0L);
     }
 }

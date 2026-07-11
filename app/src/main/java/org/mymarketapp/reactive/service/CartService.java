@@ -1,9 +1,12 @@
 package org.mymarketapp.reactive.service;
 
 import org.mymarketapp.reactive.dto.ActionType;
+import org.mymarketapp.reactive.dto.CheckoutStatus;
 import org.mymarketapp.reactive.dto.ItemDto;
 import org.mymarketapp.reactive.exception.ItemNotFoundException;
 import org.mymarketapp.reactive.model.CartItem;
+import org.mymarketapp.reactive.payment.BalanceResult;
+import org.mymarketapp.reactive.payment.PaymentClient;
 import org.mymarketapp.reactive.repository.CartItemRepository;
 import org.mymarketapp.reactive.repository.ItemRepository;
 import org.springframework.stereotype.Service;
@@ -16,10 +19,12 @@ public class CartService {
 
     private final CartItemRepository cartItemRepository;
     private final ItemRepository itemRepository;
+    private final PaymentClient paymentClient;
 
-    public CartService(CartItemRepository cartItemRepository, ItemRepository itemRepository) {
+    public CartService(CartItemRepository cartItemRepository, ItemRepository itemRepository, PaymentClient paymentClient) {
         this.cartItemRepository = cartItemRepository;
         this.itemRepository = itemRepository;
+        this.paymentClient = paymentClient;
     }
 
     @Transactional
@@ -72,5 +77,20 @@ public class CartService {
     @Transactional
     public Mono<Void> clearCart() {
         return cartItemRepository.deleteAll();
+    }
+
+    public Mono<CheckoutStatus> canCheckout() {
+        return Mono.zip(getTotalSum(), paymentClient.getBalance())
+                .map(t -> {
+                    long total = t.getT1();
+                    BalanceResult balance = t.getT2();
+                    if (!balance.available()) {
+                        return CheckoutStatus.PAYMENT_SERVICE_UNAVAILABLE;
+                    }
+                    if (balance.balance() < total) {
+                        return CheckoutStatus.INSUFFICIENT_BALANCE;
+                    }
+                    return CheckoutStatus.OK;
+                });
     }
 }

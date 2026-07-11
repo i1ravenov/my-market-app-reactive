@@ -23,3 +23,5 @@ gradle-app.setting
 /.idea
 
 plan.md
+
+.DS_Store
